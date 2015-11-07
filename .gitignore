@@ -1,0 +1,22 @@
+# Windows
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+._*
+
+# 편집기
+.vscode/
+.idea/
+*.swp
+*~
+
+# Office 임시 파일
+~$*
+
+# GitHub Releases 에만 올리는 배포 파일
+release/

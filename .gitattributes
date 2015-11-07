@@ -1,0 +1,25 @@
+# 원본 바이트 보존
+* -text
+
+*.md            text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+LICENSE         text eol=lf
+
+*.ppt   binary
+*.pps   binary
+*.pptx  binary
+*.ppsx  binary
+*.doc   binary
+*.hwp   binary
+*.exe   binary
+*.dll   binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.gif   binary
+*.bmp   binary
+*.ico   binary
+*.wav   binary
+*.mp3   binary
+*.mid   binary
