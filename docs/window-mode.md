@@ -1,6 +1,6 @@
 # Atrox window mode patch
 
-Four spots in the Atrox executable are changed so the game runs in an 800x600 window. The patch skips the block that switches to fullscreen, always passes 800x600 to the resolution function, changes where the view starts, and divides the values passed to the scroll functions by 8.
+The patch changes four places in the Atrox executable so the game runs in an 800x600 window. It skips the block that switches to fullscreen and always passes 800x600 to the resolution function. It also changes where the view starts and divides the values passed to the scroll functions by 8.
 
 
 ## Target
@@ -11,7 +11,7 @@ Four spots in the Atrox executable are changed so the game runs in an 800x600 wi
 | File | UPX-unpacked `atrox.exe` (2,965,504 bytes) |
 | md5 | `b4c64c06c2afd830995ef497478718be` |
 
-The retail `atrox.exe` (md5 `01d0c56a04f61ffa40d219eb0378154c`) is packed with UPX, so its code is not visible as is. Unpacking it with `upx -d` gives the file in the table above.
+The retail `atrox.exe` (md5 `01d0c56a04f61ffa40d219eb0378154c`) is packed with UPX, so its code cannot be read directly. Unpacking it with `upx -d` gives the file in the table above.
 
 The image base is `0x400000`. Every change is inside the `.text` section, and `.text` maps virtual address `0x401000` to file offset `0x1000`. So **file offset = virtual address - 0x400000**.
 
@@ -61,7 +61,7 @@ The conditional jump at `0x0057C626` goes to `0x0057C6EC` when `al` is 0. Otherw
 The `JE rel32` was replaced with a `JMP rel32` to the same target. `JMP` is one byte shorter, so the distance grows from `0xC0` to `0xC1` and one `NOP` is left at the end.
 
 
-## 2. Fixing the resolution mode at 1
+## 2. Locking the resolution mode to 1
 
 `0x004DC840` takes a resolution mode and sets the screen size. Mode 0 uses 640x480 and mode 1 uses 800x600.
 
@@ -77,7 +77,7 @@ The `JE rel32` was replaced with a `JMP rel32` to the same target. `JMP` is one 
 004DC8AA  C7 40 24 E0 01 00 00  mov  [eax+0x24], 480 ; mode 0: height
 ```
 
-The function at `0x00489500` passes the `+0x28` value of the global object `0x00B26DFC` (the resolution mode saved in the options) to this function as the mode, through `0x0040787E` to `0x004DC840`. `0x004015D7` only returns the address of that object.
+The function at `0x00489500` passes the `+0x28` value of the global object `0x00B26DFC` (the resolution mode saved in the options) as the mode to this function, calling `0x004DC840` through `0x0040787E`. `0x004015D7` only returns the address of that object.
 
 ```
 0048951A  6A 01              push 1
@@ -117,12 +117,12 @@ The 9 bytes at `0x00489521` became a short jump to the free space at `0x004894EB
 004DC4F7  89 7E 54           mov  [esi+0x54], edi
 ```
 
-The meaning of each field is left for further investigation.
+What each field means still needs to be checked.
 
 
 ## 4. Reducing the scroll amount
 
-Around `0x0042D477` the computed movement amounts `esi` and `ebx` are passed to two functions (`0x0040727A`, `0x00402414`). In a window the scrolling is too fast, so both values are shifted right by 3 bits (divided by 8) before being passed.
+The code around `0x0042D477` passes the computed movement amounts `esi` and `ebx` to two functions (`0x0040727A`, `0x00402414`). Scrolling is too fast in window mode, so the patch shifts both values right by 3 bits to divide them by 8 before passing them on.
 
 ```
 ; original
@@ -157,7 +157,7 @@ Around `0x0042D477` the computed movement amounts `esi` and `ebx` are passed to 
 0042D4C9  EB BE              jmp  0x0042D489
 ```
 
-There was no room for a `sar` in place, so the calls were moved into free space with a `sar` in front of each, and they jump back to the original flow. A moved `CALL` sits at a new address, so its relative distance was recomputed. The original `E8 FD 9D FD FF` and the patched `E8 BC 9D FD FF` both call `0x0040727A`.
+There was no room for a `sar` at the original spot, so each call was moved into free space with a `sar` in front of it. Execution then jumps back to the original flow. A moved `CALL` sits at a new address, so its relative distance was recomputed. The original `E8 FD 9D FD FF` and the patched `E8 BC 9D FD FF` both call `0x0040727A`.
 
 `sar` is a sign-preserving shift, so negative (opposite direction) movement is divided by 8 as well.
 
